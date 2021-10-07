@@ -9,10 +9,17 @@ import glob
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from utils import logger
+import logging
+
+logging.basicConfig(level=logging.INFO,
+                    format='[%(asctime)s.%(msecs)03d]: %(process)d %(levelname)s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    handlers=[logging.StreamHandler()])
+
+logger = logging.getLogger()
 
 
-def main(args):
+def make_splits(args):
     # create list of sample files
     all_files = glob.glob(args.data_dir + os.sep + '**' + os.sep + '*.*')
     # remove dataset root
@@ -27,10 +34,23 @@ def main(args):
     write_list(os.path.join(args.splits_out_dir, 'train.txt'), train_files)
     write_list(os.path.join(args.splits_out_dir, 'test.txt'), test_files)
 
+    # copy or create classes.txt file
+    classes_src = os.path.join(args.data_dir, 'classes.txt')
+    classes_dst = os.path.join(args.splits_out_dir, 'classes.txt')
+    if os.path.exists(classes_src):
+        shutil.copy(classes_src, classes_dst)
+    else:
+        write_list(classes_dst, sorted(pd.unique([f.split(os.sep)[-2] for f in all_files]),
+                                       key=lambda x: 'z' if x == 'other' else x))
+
     if args.links_out_dir:
+        # copy classes file
+        links_classes = os.path.join(args.links_out_dir, 'classes.txt')
+        if not os.path.exists(links_classes):
+            shutil.copy(classes_dst, links_classes)
         # write symlinks
         for i, f in enumerate(itertools.chain(train_files, test_files)):
-            link_path = os.path.join(args.links_out_dir, 'train' if i<len(train_files) else 'test', f)
+            link_path = os.path.join(args.links_out_dir, 'train' if i < len(train_files) else 'test', f)
             os.makedirs(os.path.dirname(link_path), exist_ok=True)
             src_file_path = os.path.join(args.data_dir, f)
             os.symlink(src_file_path, link_path)
@@ -60,4 +80,4 @@ if __name__ == '__main__':
             os.makedirs(args.links_out_dir)
     if not os.path.exists(args.splits_out_dir):
         os.makedirs(args.splits_out_dir)
-    main(args)
+    make_splits(args)
