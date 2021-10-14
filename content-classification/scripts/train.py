@@ -2,20 +2,27 @@
 Model training code
 """
 import argparse
+import glob
 import os
+
+import cv2
 import pandas as pd
 
 import tensorflow as tf
+import numpy as np
+import tqdm
 from keras import Sequential
 from keras.applications.mobilenet_v2 import MobileNetV2
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
 from keras.layers import GlobalAveragePooling2D, Dense, Reshape
 from keras.optimizer_v2.rmsprop import RMSprop
 from keras_preprocessing.image import ImageDataGenerator
+from keras.metrics import CategoricalAccuracy
 from keras import backend as K
 
 import logging
 
+from tensorflow.keras.applications import mobilenet_v2
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
 from utils import freeze_session
@@ -35,40 +42,47 @@ def build_model(input_shape, weights, n_classes):
     # assemble the model
     res_model = Sequential(
         [model, GlobalAveragePooling2D(), Dense(n_classes, activation='softmax', name='predictions')])
-    res_model.compile(loss='categorical_crossentropy', optimizer=RMSprop(learning_rate=0.0001), metrics=['accuracy'])
+    res_model.compile(loss='categorical_crossentropy', optimizer=RMSprop(learning_rate=0.0001), metrics=[CategoricalAccuracy()])
     if weights:
         logger.info('Loading weights...')
         res_model.load_weights(weights)
     return res_model
 
-
 def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_fraction):
     logs_dir = os.path.join(out_dir, 'logs')
     os.makedirs(logs_dir, exist_ok=True)
+    np.random.seed(1337)
 
     # create generator
     data_generator = ImageDataGenerator(
-        rescale=1. / 255,
-        shear_range=0.2,
-        zoom_range=0.2,
-        rotation_range=90,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        horizontal_flip=True,
+        # dataset is large enough to skip augmentations
+        # shear_range=0.2,
+        # zoom_range=0.2,
+        # rotation_range=45,
+        # width_shift_range=0.2,
+        # height_shift_range=0.2,
+        # horizontal_flip=True,
+        preprocessing_function=mobilenet_v2.preprocess_input,
         validation_split=val_fraction)
 
     # create train and val data iterators
     train_iter = data_generator.flow_from_directory(os.path.join(data_dir, 'train'),
-                                                    target_size=input_shape[::2],
+                                                    target_size=input_shape[:2],
                                                     batch_size=batch,
                                                     class_mode='categorical',
-                                                    subset='training')
+                                                    classes=classes,
+                                                    subset='training',
+                                                    seed=1337,
+                                                    follow_links=True)
 
     val_iter = data_generator.flow_from_directory(os.path.join(data_dir, 'train'),
-                                                  target_size=input_shape[::2],
+                                                  target_size=input_shape[:2],
                                                   batch_size=batch,
+                                                  classes=classes,
                                                   class_mode='categorical',
-                                                  subset='validation')
+                                                  subset='validation',
+                                                  seed=1337,
+                                                  follow_links=True)
 
     # build model with imagenet or pre-defined weights
     logger.info('Creating model...')
@@ -77,15 +91,19 @@ def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_f
     # training process callbacks
     logging = TensorBoard(log_dir=logs_dir)
     checkpoint = ModelCheckpoint(os.path.join(logs_dir, 'model.h5'),
-                                 monitor='val_loss', save_weights_only=True, save_best_only=True, period=5)
+                                 monitor='val_loss', save_weights_only=True, save_best_only=True, save_freq='epoch')
 
     earlystop = EarlyStopping(monitor='val_accuracy', patience=20, verbose=0, mode='auto')
 
     logger.info('Training...')
-    fit_result = model.fit(x=train_iter, epochs=epochs, validation_data=val_iter,
+    fit_result = model.fit(x=train_iter,
+                           epochs=epochs,
+                           validation_data=val_iter,
                            callbacks=[logging, checkpoint, earlystop])
-
     logger.info('Saving...')
+
+    # save keras model for evaluation
+    model.save(os.path.join(args.out_dir, 'keras'))
 
     # save the model as frozen graph for compatibility, input name will be input_1, and output name is Identity
 
@@ -120,6 +138,7 @@ if __name__ == '__main__':
     ap.add_argument("--num_epochs", default=300, help="Number of epochs", type=int)
     ap.add_argument("--weights", default='', help="Start weights")
     ap.add_argument("--out_dir", default='../models/current/', help="Train log dir")
+    ap.add_argument("--val_fraction", default=0.1, help="How much data to use as validation subset during training")
     args = ap.parse_args()
     # check args
     classes_file = os.path.exists(os.path.join(args.data_dir, 'classes.txt'))
@@ -137,9 +156,13 @@ if __name__ == '__main__':
         exit(-1)
     # load classes
     classes = pd.read_csv(os.path.join(args.data_dir, 'classes.txt'), header=None)[0].to_list()
-    # add log file
-    logger.addHandler(logging.FileHandler(os.path.join(args.out_dir, 'train.log')))
+    # configure logging
+    fh = logging.FileHandler(os.path.join(args.out_dir, 'train.log'), mode='w')
+    fh.setFormatter(logging.Formatter('[%(asctime)s.%(msecs)03d]: %(process)d %(module)s %(levelname)s %(message)s'))
+    logger.addHandler(fh)
+    # tf.compat.v1.disable_eager_execution()
     # train
     train((args.input_shape, args.input_shape, 3), args.data_dir, args.batch_size, args.num_epochs, args.weights,
           classes,
-          args.out_dir)
+          args.out_dir,
+          args.val_fraction)

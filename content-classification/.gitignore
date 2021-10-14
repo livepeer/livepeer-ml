@@ -1,3 +1,2 @@
 events.out*
-models/current/logs/train
-models/current/logs/validation
+models/current/logs/
