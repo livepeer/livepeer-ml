@@ -17,8 +17,8 @@ jobs:
       run: pip install -r requirements.txt
     - name: Install model dependencies
       run: if [ -f content-classification/requirements.txt ]; then pip install -r content-classification/requirements.txt; fi
-    - name: Sync the dataset
-      run: gsutil -m rsync -i -d -r gs://livepeer-ml-data $CCL_DATASET
+#    - name: Sync the dataset
+#      run: gsutil -m rsync -i -d -r gs://livepeer-ml-data $CCL_DATASET
     - name: Create data splits
       run: |
        python split.py --data_dir $CONTENT_CLASSIFICATION_DATASET --splits_out_dir $CONTENT_CLASSIFICATION_DATASET/splits/ --out_dir $CONTENT_CLASSIFICATION_DATASET/splits/ --resize_to 224,224
