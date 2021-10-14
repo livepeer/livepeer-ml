@@ -22,14 +22,14 @@ jobs:
     - name: Create data splits
       run: |
        cd utils
-       python split.py --data_dir $CONTENT_CLASSIFICATION_DATASET --splits_out_dir $CONTENT_CLASSIFICATION_DATASET/splits/ --out_dir $CONTENT_CLASSIFICATION_DATASET/splits/ --resize_to 224,224
+       python split.py --data_dir $CCL_DATASET --splits_out_dir $CCL_DATASET/splits/ --out_dir $CCL_DATASET/splits/ --resize_to 224,224
     - name: Train model
       run: |
        export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
        cd $GITHUB_WORKSPACE/content-classification/scripts/
-       python train.py --data_dir $CONTENT_CLASSIFICATION_DATASET/splits/ --num_epochs 2 --batch_size 256
+       python train.py --data_dir $CCL_DATASET/splits/ --num_epochs 2 --batch_size 256
     - name: Test model
       run: |
        export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
        cd $GITHUB_WORKSPACE/content-classification/scripts/
-       python test.py --data_dir $CONTENT_CLASSIFICATION_DATASET/splits/ --num_epochs 2 --batch_size 256
+       python test.py --data_dir $CCL_DATASET/splits/ --num_epochs 2 --batch_size 256
