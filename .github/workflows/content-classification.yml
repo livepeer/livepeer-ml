@@ -1,0 +1,32 @@
+# This workflow will train and test detection model on self-hosted runner. It assumes system or local Python is configured on the host.
+
+name: Create detection model
+
+on:
+#  push:
+#    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ml-gpu-runner
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install global dependencies
+      run: pip install -r requirements.txt
+    - name: Install model dependencies
+      run: if [ -f content-classification/requirements.txt ]; then pip install -r content-classification/requirements.txt; fi
+    - name: Sync the dataset
+      run: gsutil -m rsync -d -r gs://livepeer-ml-data $CCL_DATASET
+    - name: Create data splits
+      run: |
+       python split.py --data_dir $CONTENT_CLASSIFICATION_DATASET --splits_out_dir $CONTENT_CLASSIFICATION_DATASET/splits/ --out_dir $CONTENT_CLASSIFICATION_DATASET/splits/ --resize_to 224,224
+    - name: Train model
+      run: |
+       export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
+       cd content-classification/models/
+       python train.py --data_dir $CONTENT_CLASSIFICATION_DATASET/splits/ --num_epochs 2 --batch_size 256
+    - name: Test model
+      run: |
+       python test.py --data_dir $CONTENT_CLASSIFICATION_DATASET/splits/ --num_epochs 2 --batch_size 256
