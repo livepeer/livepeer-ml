@@ -2,15 +2,10 @@
 Model training code
 """
 import argparse
-import glob
 import os
-
-import cv2
 import pandas as pd
-
 import tensorflow as tf
 import numpy as np
-import tqdm
 from keras import Sequential
 from keras.applications.mobilenet_v2 import MobileNetV2
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
@@ -18,14 +13,10 @@ from keras.layers import GlobalAveragePooling2D, Dense, Reshape
 from keras.optimizer_v2.rmsprop import RMSprop
 from keras_preprocessing.image import ImageDataGenerator
 from keras.metrics import CategoricalAccuracy
-from keras import backend as K
-
 import logging
 
 from tensorflow.keras.applications import mobilenet_v2
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
-
-from utils import freeze_session
 
 logging.basicConfig(level=logging.INFO,
                     format='[%(asctime)s.%(msecs)03d]: %(process)d %(module)s %(levelname)s %(message)s',

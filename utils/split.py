@@ -21,6 +21,7 @@ logging.basicConfig(level=logging.INFO,
 
 logger = logging.getLogger()
 
+
 def resize_image(args):
     try:
         in_path, out_path, new_size = args
@@ -30,6 +31,7 @@ def resize_image(args):
             cv2.imwrite(out_path, img)
     except:
         logger.exception(f'Error resizing image {in_path}')
+
 
 def make_splits(args):
     # create list of sample files
@@ -69,13 +71,22 @@ def make_splits(args):
             paths.append((src_file_path, link_path, args.resize_to))
         if not args.resize_to:
             # just create links
-            for src_file_path, link_path, _ in tqdm.tqdm(paths, 'Create links'):
+            for src_file_path, link_path, _ in tqdm.tqdm(paths, 'Create links', miniters=len(paths) / 100):
                 os.symlink(src_file_path, link_path)
         else:
             # resize images and write files
             pool = multiprocessing.Pool(processes=4)
-            list(tqdm.tqdm(pool.imap_unordered(resize_image, paths), total=len(paths), desc='Resize images'))
-
+            list(tqdm.tqdm(pool.imap_unordered(resize_image, paths), total=len(paths), miniters=len(paths) / 100,
+                           desc='Resize images'))
+        if not args.overwrite:
+            # remove all files in destination which weren't among new files
+            all_files = list(glob.glob(os.path.join(args.out_dir, 'train/**/*.*'))) + list(
+                glob.glob(os.path.join(args.out_dir, 'test/**/*.*')))
+            diff_files = set(all_files).difference(set([p[1] for p in paths]))
+            if len(diff_files) > 0:
+                logger.warning(f'Will delete {len(diff_files)} files in destination which are not present in current split')
+                for f in tqdm.tqdm(diff_files, 'Deleting...', miniters=len(diff_files) / 100):
+                    os.remove(f)
 
 
 if __name__ == '__main__':
@@ -84,7 +95,8 @@ if __name__ == '__main__':
     ap.add_argument('--data_dir', help='Dataset directory', required=True)
     ap.add_argument('--splits_out_dir', required=True, help='List of files output dir')
     ap.add_argument('--out_dir', default='', help='Output dir for links or resized images')
-    ap.add_argument('--resize_to', default='', help='Comma-separated target dimensions of images. If specified, script will create image files in out_dir, otherwise it will create symlinks to original files')
+    ap.add_argument('--resize_to', default='',
+                    help='Comma-separated target dimensions of images. If specified, script will create image files in out_dir, otherwise it will create symlinks to original files')
     ap.add_argument('--overwrite', default=False, action='store_true')
     ap.add_argument('--test_ratio', default=0.1)
     args = ap.parse_args()
