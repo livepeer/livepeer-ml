@@ -51,7 +51,9 @@ def test(input_shape, data_dir, model_dir, out_dir):
 
     # evaluate
     results = model.evaluate(test_iter, batch_size=32)
-    logger.info(f'Test results:\nloss={results[0]}\naccuracy={results[1]}')
+    test_accuracy = results[1]
+    test_loss = results[0]
+    logger.info(f'Test results:\nloss={test_loss}\naccuracy={test_accuracy}')
 
     y_pred = model.predict(test_iter)
 
@@ -76,6 +78,7 @@ def test(input_shape, data_dir, model_dir, out_dir):
     files_err = np.array(test_iter.filenames)[idx_err]
     err_df = pd.DataFrame(zip(y_gt_err, y_pred_err), index=files_err, columns=['true_label', 'predicted_label'])
     err_df.to_csv(os.path.join(out_dir, 'errors.csv'))
+    return test_loss, test_accuracy
 
 
 if __name__ == '__main__':
@@ -88,6 +91,7 @@ if __name__ == '__main__':
     ap.add_argument("--model_dir", default='../models/current/keras/', help="Keras model dir")
     ap.add_argument("--out_dir", default='../models/current/', help="Test output dir")
     ap.add_argument("--use_train", default=False, action='store_true', help="Evaluate metrics on train")
+    ap.add_argument("--min_acc", default=0.85, help="Minimum accuracy on test set, affects return code")
     args = ap.parse_args()
     # check args
     classes_file = os.path.exists(os.path.join(args.data_dir, 'classes.txt'))
@@ -106,4 +110,6 @@ if __name__ == '__main__':
     logger.addHandler(fh)
     logger.info('Start test')
     # run
-    test((args.input_shape, args.input_shape, 3), args.data_dir, args.model_dir, args.out_dir)
+    test_loss, test_accuracy = test((args.input_shape, args.input_shape, 3), args.data_dir, args.model_dir,
+                                    args.out_dir)
+    exit(int(test_accuracy < 0.85))

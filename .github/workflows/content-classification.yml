@@ -4,9 +4,9 @@ name: Create detection model
 
 on:
 #  push:
-#    branches: [ main ]
+#    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
   workflow_dispatch:
 jobs:
   build:
@@ -17,8 +17,8 @@ jobs:
       run: pip install -r requirements.txt
     - name: Install model dependencies
       run: if [ -f content-classification/requirements.txt ]; then pip install -r content-classification/requirements.txt; fi
-#    - name: Sync the dataset
-#      run: gsutil -m rsync -i -d -r gs://livepeer-ml-data $CCL_DATASET
+    - name: Sync the dataset
+      run: gsutil -m rsync -i -d -r gs://livepeer-ml-data $CCL_DATASET
     - name: Create data splits
       run: |
        cd utils

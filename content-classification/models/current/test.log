@@ -1,21 +1,21 @@
-[2021-10-14 14:38:17,561.561]: 501622 test INFO Start test
-[2021-10-14 14:38:52,665.665]: 501622 test INFO Test results:
-loss=0.07732778787612915
-accuracy=0.9732983112335205
-[2021-10-14 14:39:11,174.174]: 501622 test INFO Classification report:
+[2021-10-18 18:16:15,514.514]: 139756 test INFO Start test
+[2021-10-18 18:17:30,833.833]: 139756 test INFO Test results:
+loss=0.07823366671800613
+accuracy=0.972657322883606
+[2021-10-18 18:18:25,880.880]: 139756 test INFO Classification report:
               precision    recall  f1-score   support
 
-       adult       0.96      0.96      0.96      3111
-       other       0.96      0.96      0.96      3923
-      soccer       0.99      0.99      0.99      4014
+       adult       0.96      0.96      0.96      3101
+       other       0.96      0.97      0.96      4041
+      soccer       1.00      0.99      0.99      3903
 
-    accuracy                           0.97     11048
-   macro avg       0.97      0.97      0.97     11048
-weighted avg       0.97      0.97      0.97     11048
+    accuracy                           0.97     11045
+   macro avg       0.97      0.97      0.97     11045
+weighted avg       0.97      0.97      0.97     11045
 
-[2021-10-14 14:39:11,212.212]: 501622 test INFO Confusion matrix:
+[2021-10-18 18:18:25,916.916]: 139756 test INFO Confusion matrix:
 true\pred
         adult  soccer  other
-adult    2994     122      0
-soccer    117    3776     31
-other       0      25   3983
+adult    2974     119      0
+soccer    127    3903     37
+other       0      19   3866
