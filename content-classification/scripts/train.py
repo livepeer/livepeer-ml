@@ -9,7 +9,7 @@ import numpy as np
 from keras import Sequential
 from keras.applications.mobilenet_v2 import MobileNetV2
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
-from keras.layers import GlobalAveragePooling2D, Dense, Reshape
+from keras.layers import GlobalAveragePooling2D, Dense, Reshape, Normalization, Rescaling
 from keras.optimizer_v2.rmsprop import RMSprop
 from keras_preprocessing.image import ImageDataGenerator
 from keras.metrics import CategoricalAccuracy
@@ -30,9 +30,11 @@ def build_model(input_shape, weights, n_classes):
     model = MobileNetV2(input_shape=input_shape, weights='imagenet' if not weights else None, include_top=False)
     # freeze feature extraction layers
     model.trainable = False
-    # assemble the model
+    # assemble the model from: pre-processing layers, top layers of MobileNetv2, classification layers
     res_model = Sequential(
-        [model, GlobalAveragePooling2D(), Dense(n_classes, activation='softmax', name='predictions')])
+        [Rescaling(scale=1./127.5, offset=-1, input_shape=input_shape),
+         model,
+         GlobalAveragePooling2D(), Dense(n_classes, activation='softmax', name='predictions')])
     res_model.compile(loss='categorical_crossentropy', optimizer=RMSprop(learning_rate=0.0001), metrics=[CategoricalAccuracy()])
     if weights:
         logger.info('Loading weights...')
@@ -53,7 +55,7 @@ def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_f
         # width_shift_range=0.2,
         # height_shift_range=0.2,
         # horizontal_flip=True,
-        preprocessing_function=mobilenet_v2.preprocess_input,
+        preprocessing_function=None,
         validation_split=val_fraction)
 
     # create train and val data iterators
@@ -84,7 +86,7 @@ def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_f
     checkpoint = ModelCheckpoint(os.path.join(logs_dir, 'model.h5'),
                                  monitor='val_loss', save_weights_only=True, save_best_only=True, save_freq='epoch')
 
-    earlystop = EarlyStopping(monitor='val_accuracy', patience=20, verbose=0, mode='auto')
+    earlystop = EarlyStopping(monitor='val_categorical_accuracy', patience=20, verbose=0, mode='auto')
 
     logger.info('Training...')
     fit_result = model.fit(x=train_iter,
@@ -92,9 +94,6 @@ def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_f
                            validation_data=val_iter,
                            callbacks=[logging, checkpoint, earlystop])
     logger.info('Saving...')
-
-    # save keras model for evaluation
-    model.save(os.path.join(args.out_dir, 'keras'))
 
     # save the model as frozen graph for compatibility, input name will be input_1, and output name is Identity
 
@@ -112,6 +111,9 @@ def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_f
                       logdir=out_dir,
                       name="tasmodel.pb",
                       as_text=False)
+
+    # save keras model for evaluation
+    model.save(os.path.join(args.out_dir, 'keras'))
 
     df = pd.DataFrame.from_dict(fit_result.history)
     df.to_csv(os.path.join(out_dir, 'train_stats.csv'), encoding='utf-8', index=False)

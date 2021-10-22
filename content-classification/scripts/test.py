@@ -30,7 +30,7 @@ def test(input_shape, data_dir, model_dir, out_dir):
     # create generator
     data_generator = ImageDataGenerator(
         # dataset is large enough to skip augmentations
-        preprocessing_function=mobilenet_v2.preprocess_input)
+        preprocessing_function=None)
 
     test_iter = data_generator.flow_from_directory(os.path.join(data_dir, 'test'),
                                                    target_size=input_shape[:2],
