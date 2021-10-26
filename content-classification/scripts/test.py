@@ -3,11 +3,14 @@ Model evaluation code
 """
 import argparse
 import os
+import random
+
 import pandas as pd
 import tensorflow as tf
 import numpy as np
 from keras_preprocessing.image import ImageDataGenerator
 import logging
+import content_classification
 from sklearn.metrics import classification_report, confusion_matrix
 from tensorflow.keras.applications import mobilenet_v2
 
@@ -25,12 +28,11 @@ def as_labels(x, classes):
 
 def test(input_shape, data_dir, model_dir, out_dir):
     np.random.seed(1337)
+    random.seed(1337)
     batch_size = 32
 
     # create generator
-    data_generator = ImageDataGenerator(
-        # dataset is large enough to skip augmentations
-        preprocessing_function=None)
+    data_generator = ImageDataGenerator(preprocessing_function=content_classification.preprocess_input)
 
     test_iter = data_generator.flow_from_directory(os.path.join(data_dir, 'test'),
                                                    target_size=input_shape[:2],
@@ -56,6 +58,7 @@ def test(input_shape, data_dir, model_dir, out_dir):
     logger.info(f'Test results:\nloss={test_loss}\naccuracy={test_accuracy}')
 
     y_pred = model.predict(test_iter)
+    from matplotlib import pyplot as plt
 
     y_pred_idx = np.argmax(y_pred, axis=1)
     y_gt_idx = np.argmax(y_gt, axis=1)
@@ -65,11 +68,11 @@ def test(input_shape, data_dir, model_dir, out_dir):
     logger.info(f'Classification report:\n{classification_report(y_gt_labs, y_pred_labs)}')
 
     cm = pd.DataFrame(
-        confusion_matrix(y_pred_labs, y_gt_labs),
+        confusion_matrix(y_gt_labs, y_pred_labs, labels=classes),
         index=classes,
         columns=classes
     )
-    logger.info(f'Confusion matrix:\ntrue\pred\n{cm}')
+    logger.info(f'Confusion matrix:\ntrue \ pred\n{cm}')
 
     # write errors
     idx_err = y_pred_idx != y_gt_idx

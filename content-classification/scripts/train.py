@@ -6,17 +6,14 @@ import os
 import pandas as pd
 import tensorflow as tf
 import numpy as np
-from keras import Sequential
-from keras.applications.mobilenet_v2 import MobileNetV2
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
-from keras.layers import GlobalAveragePooling2D, Dense, Reshape, Normalization, Rescaling
-from keras.optimizer_v2.rmsprop import RMSprop
-from keras_preprocessing.image import ImageDataGenerator
-from keras.metrics import CategoricalAccuracy
 import logging
+import content_classification
 
 from tensorflow.keras.applications import mobilenet_v2
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
+
+from utils.aug_data_generator import AugmentedDataGenerator
 
 logging.basicConfig(level=logging.INFO,
                     format='[%(asctime)s.%(msecs)03d]: %(process)d %(module)s %(levelname)s %(message)s',
@@ -26,36 +23,24 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger()
 
 
-def build_model(input_shape, weights, n_classes):
-    model = MobileNetV2(input_shape=input_shape, weights='imagenet' if not weights else None, include_top=False)
-    # freeze feature extraction layers
-    model.trainable = False
-    # assemble the model from: pre-processing layers, top layers of MobileNetv2, classification layers
-    res_model = Sequential(
-        [Rescaling(scale=1./127.5, offset=-1, input_shape=input_shape),
-         model,
-         GlobalAveragePooling2D(), Dense(n_classes, activation='softmax', name='predictions')])
-    res_model.compile(loss='categorical_crossentropy', optimizer=RMSprop(learning_rate=0.0001), metrics=[CategoricalAccuracy()])
-    if weights:
-        logger.info('Loading weights...')
-        res_model.load_weights(weights)
-    return res_model
-
 def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_fraction):
     logs_dir = os.path.join(out_dir, 'logs')
     os.makedirs(logs_dir, exist_ok=True)
     np.random.seed(1337)
 
-    # create generator
-    data_generator = ImageDataGenerator(
-        # dataset is large enough to skip augmentations
+    # create generator, dataset is large enough to skip affine transformations, but color shifts required to prevent
+    # the model from learning predominate color in classes
+    data_generator = AugmentedDataGenerator(
+        per_channel_shift_range=30,
+        # swap_channels=True,
+        # grayscale=True,
         # shear_range=0.2,
         # zoom_range=0.2,
         # rotation_range=45,
         # width_shift_range=0.2,
         # height_shift_range=0.2,
         # horizontal_flip=True,
-        preprocessing_function=None,
+        preprocessing_function=content_classification.preprocess_input,
         validation_split=val_fraction)
 
     # create train and val data iterators
@@ -79,7 +64,7 @@ def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_f
 
     # build model with imagenet or pre-defined weights
     logger.info('Creating model...')
-    model = build_model(input_shape, weights, len(classes))
+    model = content_classification.build_model(input_shape, weights, len(classes))
 
     # training process callbacks
     logging = TensorBoard(log_dir=logs_dir)
