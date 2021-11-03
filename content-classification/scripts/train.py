@@ -10,7 +10,6 @@ from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
 import logging
 import content_classification
 
-from tensorflow.keras.applications import mobilenet_v2
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
 from utils.aug_data_generator import AugmentedDataGenerator
