@@ -17,6 +17,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        cd $GITHUB_WORKSPACE
         git config --global user.name 'livepeer-mlops'
         git commit -a -m $(grep 'Test results' content-classification/models/current/test.log)
         git push
