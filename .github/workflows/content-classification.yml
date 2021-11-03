@@ -14,9 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install global dependencies
-      run: pip install -r requirements.txt
+      run: pip3 install -r requirements.txt
     - name: Install model dependencies
-      run: if [ -f content-classification/requirements.txt ]; then pip install -r content-classification/requirements.txt; fi
+      run: if [ -f content-classification/requirements.txt ]; then pip3 install -r content-classification/requirements.txt; fi
     - name: Sync the dataset
       run: gsutil -m rsync -i -d -r gs://livepeer-ml-data $CCL_DATASET
     - name: Create data splits
