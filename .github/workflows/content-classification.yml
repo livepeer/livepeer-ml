@@ -13,23 +13,31 @@ jobs:
     runs-on: ml-gpu-runner
     steps:
     - uses: actions/checkout@v2
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@master
+      with:
+        project_id: livepeer-ml
+        service_account_key: ${{ secrets.GCP_SERVICE_KEY }}
+        export_default_credentials: true
+    - name: Create and activate virtual environment
+      run: python3 -m venv .venv && source .venv/bin/activate
     - name: Install global dependencies
-      run: pip3 install -r requirements.txt
+      run: python3 -m pip install -r requirements.txt
     - name: Install model dependencies
-      run: if [ -f content-classification/requirements.txt ]; then pip3 install -r content-classification/requirements.txt; fi
+      run: if [ -f content-classification/requirements.txt ]; then python3 -m pip install -r content-classification/requirements.txt; fi
     - name: Sync the dataset
-      run: gsutil -m rsync -i -d -r gs://livepeer-ml-data $CCL_DATASET
+      run: gsutil -m rsync -i -d -r gs://livepeer-ml-data /ccl-data/data
     - name: Create data splits
       run: |
        cd utils
-       python split.py --data_dir $CCL_DATASET --splits_out_dir $CCL_DATASET/../splits/ --out_dir $CCL_DATASET/../splits/ --resize_to 224,224
+       python3 split.py --data_dir /ccl-data/data --splits_out_dir /ccl-data/splits/ --out_dir /ccl-data/splits/ --resize_to 224,224
     - name: Train model
       run: |
        export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
        cd $GITHUB_WORKSPACE/content-classification/scripts/
-       python train.py --data_dir $CCL_DATASET/../splits/ --num_epochs 2 --batch_size 256
+       python3 train.py --data_dir /ccl-data/splits/ --num_epochs 2 --batch_size 256
     - name: Test model
       run: |
        export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
        cd $GITHUB_WORKSPACE/content-classification/scripts/
-       python test.py --data_dir $CCL_DATASET/../splits/ --num_epochs 2 --batch_size 256
+       python3 test.py --data_dir /ccl-data/splits/ --num_epochs 2 --batch_size 256

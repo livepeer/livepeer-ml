@@ -12,12 +12,14 @@ RUN DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
     && add-apt-repository ppa:deadsnakes/ppa -y \
     && apt-get update \
     && apt install -y python3.9 python3.9-venv python3.9-dev python3-pip \
-    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 0
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 0 \
+    && python3 -m pip install --upgrade setuptools pip distlib
 
 # download and install GH actions runner
 RUN cd /home/devops && mkdir actions-runner && cd actions-runner \
     && curl -O -L https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz \
     && tar xzf ./actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz && chown -R devops ~devops
+
 
 # install additional runner dependencies
 RUN /home/devops/actions-runner/bin/installdependencies.sh
