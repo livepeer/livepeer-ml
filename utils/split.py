@@ -104,6 +104,8 @@ if __name__ == '__main__':
     if args.resize_to:
         args.resize_to = [int(args.resize_to.split(',')[0]), int(args.resize_to.split(',')[1])]
     # check & prepare dirs
+    if not args.data_dir.endswith(os.sep):
+        args.data_dir += os.sep
     if not os.path.exists(args.data_dir):
         logger.error(f'Data dir {args.data_dir} does not exist')
         exit(-1)

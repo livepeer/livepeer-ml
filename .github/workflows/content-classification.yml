@@ -28,7 +28,7 @@ jobs:
     - name: Create data splits
       run: |
        cd utils
-       python3 split.py --data_dir /ccl-data/data --splits_out_dir /ccl-data/splits/ --out_dir /ccl-data/splits/ --resize_to 224,224
+       python3 split.py --data_dir /ccl-data/data/ --splits_out_dir /ccl-data/splits/ --out_dir /ccl-data/splits/ --resize_to 224,224
     - name: Train model
       run: |
        export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
@@ -38,7 +38,7 @@ jobs:
       run: |
        export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
        cd $GITHUB_WORKSPACE/content-classification/scripts/
-       python3 test.py --data_dir /ccl-data/splits/ --num_epochs 2 --batch_size 256
+       python3 test.py --data_dir /ccl-data/splits/
     - name: Commit changes
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

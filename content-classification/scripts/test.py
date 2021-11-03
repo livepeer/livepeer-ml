@@ -55,11 +55,9 @@ def test(input_shape, data_dir, model_dir, out_dir):
     results = model.evaluate(test_iter, batch_size=32)
     test_accuracy = results[1]
     test_loss = results[0]
-    logger.info(f'Test results: loss={test_loss:.4f} accuracy={test_accuracy:.4f}')
+    logger.info(f'\nTest results: loss={test_loss:.4f} accuracy={test_accuracy:.4f}')
 
     y_pred = model.predict(test_iter)
-    from matplotlib import pyplot as plt
-
     y_pred_idx = np.argmax(y_pred, axis=1)
     y_gt_idx = np.argmax(y_gt, axis=1)
     y_pred_labs = as_labels(y_pred, classes)

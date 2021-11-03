@@ -2,8 +2,9 @@ from keras import Sequential
 from keras.applications.mobilenet_v2 import MobileNetV2
 from keras.layers import Rescaling, GlobalAveragePooling2D, Dense
 from keras.metrics import CategoricalAccuracy
-from keras.optimizer_v1 import RMSprop
 import logging
+
+from keras.optimizer_v2.rmsprop import RMSprop
 
 logger = logging.getLogger()
 
