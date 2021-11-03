@@ -39,11 +39,10 @@ jobs:
        export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
        cd $GITHUB_WORKSPACE/content-classification/scripts/
        python3 test.py --data_dir /ccl-data/splits/
-    - name: Commit changes
+    - name: Commit and push changes
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: git commit -a -m $(grep 'Test results' content-classification/models/current/test.log)
-    - name: Push changes
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: git push
+      run: |
+       git config --global user.name 'livepeer-mlops'
+       git commit -a -m $(grep 'Test results' content-classification/models/current/test.log)
+       git push

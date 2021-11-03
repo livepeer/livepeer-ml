@@ -11,7 +11,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
     curl jq build-essential software-properties-common tzdata \
     && add-apt-repository ppa:deadsnakes/ppa -y \
     && apt-get update \
-    && apt install -y python3.9 python3.9-venv python3.9-dev python3-pip \
+    && apt install -y python3.9 python3.9-venv python3.9-dev python3-pip git \
     && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 0 \
     && python3 -m pip install --upgrade setuptools pip distlib
 
