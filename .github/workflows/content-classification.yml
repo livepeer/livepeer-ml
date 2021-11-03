@@ -19,8 +19,6 @@ jobs:
         project_id: livepeer-ml
         service_account_key: ${{ secrets.GCP_SERVICE_KEY }}
         export_default_credentials: true
-    - name: Create and activate virtual environment
-      run: python3 -m venv .venv && source .venv/bin/activate
     - name: Install global dependencies
       run: python3 -m pip install -r requirements.txt
     - name: Install model dependencies
@@ -41,3 +39,11 @@ jobs:
        export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
        cd $GITHUB_WORKSPACE/content-classification/scripts/
        python3 test.py --data_dir /ccl-data/splits/ --num_epochs 2 --batch_size 256
+    - name: Commit changes
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: git commit -a -m $(grep 'Test results' content-classification/models/current/test.log)
+    - name: Push changes
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: git push

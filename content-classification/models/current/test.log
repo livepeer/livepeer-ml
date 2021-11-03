@@ -1,7 +1,6 @@
 [2021-10-26 16:18:39,383.383]: 487366 test INFO Start test
-[2021-10-26 16:19:54,383.383]: 487366 test INFO Test results:
-loss=0.11801839619874954
-accuracy=0.9603440761566162
+[2021-10-26 16:19:54,383.383]: 487366 test INFO
+Test results: loss=0.11801 accuracy=0.9603
 [2021-10-26 16:20:50,481.481]: 487366 test INFO Classification report:
               precision    recall  f1-score   support
 

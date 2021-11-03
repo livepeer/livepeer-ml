@@ -20,6 +20,8 @@ RUN cd /home/devops && mkdir actions-runner && cd actions-runner \
     && curl -O -L https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz \
     && tar xzf ./actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz && chown -R devops ~devops
 
+# Install OpenCV dependencies
+RUN apt-get install -y ffmpeg libsm6 libxext6
 
 # install additional runner dependencies
 RUN /home/devops/actions-runner/bin/installdependencies.sh
