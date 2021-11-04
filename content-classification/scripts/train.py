@@ -127,8 +127,7 @@ if __name__ == '__main__':
         logger.error('Weights file does not exist')
         exit(-1)
     if not os.path.exists(args.out_dir):
-        logger.error('Output dir does not exist')
-        exit(-1)
+        os.makedirs(args.out_dir)
     # load classes
     classes = pd.read_csv(os.path.join(args.data_dir, 'classes.txt'), header=None)[0].to_list()
     # configure logging
