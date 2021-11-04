@@ -13,4 +13,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Train and test the model
-      uses: ./.github/actions/content-classification-train@v1
+      uses: ./.github/actions/content-classification-train
