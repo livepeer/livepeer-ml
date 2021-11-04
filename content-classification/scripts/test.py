@@ -26,7 +26,7 @@ def as_labels(x, classes):
     return list(classes[idx] for idx in np.argmax(x, axis=1))
 
 
-def test(input_shape, data_dir, model_dir, out_dir):
+def test(input_shape, dataset_dir, model_dir, model, out_dir):
     np.random.seed(1337)
     random.seed(1337)
     batch_size = 32
@@ -34,7 +34,7 @@ def test(input_shape, data_dir, model_dir, out_dir):
     # create generator
     data_generator = ImageDataGenerator(preprocessing_function=content_classification.preprocess_input)
 
-    test_iter = data_generator.flow_from_directory(os.path.join(data_dir, 'test'),
+    test_iter = data_generator.flow_from_directory(dataset_dir,
                                                    target_size=input_shape[:2],
                                                    class_mode='categorical',
                                                    classes=classes,
@@ -44,7 +44,8 @@ def test(input_shape, data_dir, model_dir, out_dir):
                                                    shuffle=False)
 
     # load model
-    model = tf.keras.models.load_model(model_dir)
+    if model is None:
+        model = tf.keras.models.load_model(model_dir)
 
     # load y labels
     y_gt = np.zeros(shape=[len(test_iter.filenames), len(classes)])
@@ -55,7 +56,7 @@ def test(input_shape, data_dir, model_dir, out_dir):
     results = model.evaluate(test_iter, batch_size=32)
     test_accuracy = results[1]
     test_loss = results[0]
-    logger.info(f'\nTest results: loss={test_loss:.4f} accuracy={test_accuracy:.4f}')
+    logger.info(f'\nResults: loss={test_loss:.4f} accuracy={test_accuracy:.4f}')
 
     y_pred = model.predict(test_iter)
     y_pred_idx = np.argmax(y_pred, axis=1)
@@ -90,7 +91,7 @@ if __name__ == '__main__':
                                                       '2. classes.txt file with one line per class label \n')
     ap.add_argument("--input_shape", default=224, help="Model input shape", type=int)
     ap.add_argument("--model_dir", default='../models/current/keras/', help="Keras model dir")
-    ap.add_argument("--out_dir", default='../models/current/', help="Test output dir")
+    ap.add_argument("--out_dir", default='../models/current/logs/test/', help="Test output dir")
     ap.add_argument("--use_train", default=False, action='store_true', help="Evaluate metrics on train")
     ap.add_argument("--min_acc", default=0.85, help="Minimum accuracy on test set, affects return code")
     args = ap.parse_args()
@@ -111,6 +112,6 @@ if __name__ == '__main__':
     logger.addHandler(fh)
     logger.info('Start test')
     # run
-    test_loss, test_accuracy = test((args.input_shape, args.input_shape, 3), args.data_dir, args.model_dir,
-                                    args.out_dir)
+    test_loss, test_accuracy = test((args.input_shape, args.input_shape, 3), os.path.join(args.data_dir, 'test'), args.model_dir,
+                                    None, args.out_dir)
     exit(int(test_accuracy < 0.85))

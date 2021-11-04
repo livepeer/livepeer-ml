@@ -10,6 +10,8 @@ from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
 import logging
 import content_classification
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
+
+from test import test
 from utils.aug_data_generator import AugmentedDataGenerator
 
 logging.basicConfig(level=logging.INFO,
@@ -21,7 +23,7 @@ logger = logging.getLogger()
 
 
 def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_fraction):
-    logs_dir = os.path.join(out_dir, 'logs')
+    logs_dir = os.path.join(out_dir, 'logs', 'train')
     os.makedirs(logs_dir, exist_ok=True)
     np.random.seed(1337)
 
@@ -63,20 +65,23 @@ def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_f
     logger.info('Creating model...')
     model = content_classification.build_model(input_shape, weights, len(classes))
 
-    # training process callbacks
-    logging = TensorBoard(log_dir=logs_dir)
-    checkpoint = ModelCheckpoint(os.path.join(logs_dir, 'model.h5'),
-                                 monitor='val_loss', save_weights_only=True, save_best_only=True, save_freq='epoch')
-
-    earlystop = EarlyStopping(monitor='val_categorical_accuracy', patience=20, verbose=0, mode='auto')
-
     logger.info('Training...')
     fit_result = model.fit(x=train_iter,
                            epochs=epochs,
-                           validation_data=val_iter,
-                           callbacks=[logging, checkpoint, earlystop])
-    logger.info('Saving...')
+                           validation_data=val_iter)
 
+    df = pd.DataFrame.from_dict(fit_result.history)
+    logger.info(df)
+
+    logger.info('Evaluating...')
+
+    test(input_shape, os.path.join(data_dir, 'train'), None, model, logs_dir)
+
+    logger.info('Saving...')
+    # save keras model for evaluation
+    model.save(os.path.join(args.out_dir, 'keras'))
+
+    logger.info('Freezing graph...')
     # save the model as frozen graph for compatibility, input name will be input_1, and output name is Identity
 
     # convert Keras model to ConcreteFunction
@@ -94,11 +99,6 @@ def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_f
                       name="tasmodel.pb",
                       as_text=False)
 
-    # save keras model for evaluation
-    model.save(os.path.join(args.out_dir, 'keras'))
-
-    df = pd.DataFrame.from_dict(fit_result.history)
-    df.to_csv(os.path.join(out_dir, 'train_stats.csv'), encoding='utf-8', index=False)
     logger.info('Done.')
 
 

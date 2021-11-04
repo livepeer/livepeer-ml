@@ -13,33 +13,36 @@ jobs:
     runs-on: ml-gpu-runner
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Cloud SDK
+      - name: set up GCloud SDK
         uses: google-github-actions/setup-gcloud@master
         with:
           project_id: livepeer-ml
           service_account_key: ${{ secrets.GCP_SERVICE_KEY }}
           export_default_credentials: true
-      - name: Install global dependencies
+      - name: install global dependencies
         run: python3 -m pip install -r requirements.txt
-      - name: Install model dependencies
+      - name: install model dependencies
         run: if [ -f content-classification/requirements.txt ]; then python3 -m pip install -r content-classification/requirements.txt; fi
-      - name: Sync the dataset
+      - name: sync the dataset
         run: gsutil -m rsync -i -d -r gs://livepeer-ml-data /ccl-data/data
       - name: Create data splits
         run: |
           cd utils
           python3 split.py --data_dir /ccl-data/data/ --splits_out_dir /ccl-data/splits/ --out_dir /ccl-data/splits/ --resize_to 224,224
-      - name: Train model
+      - name: train model
         run: |
           export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
           cd $GITHUB_WORKSPACE/content-classification/scripts/
           python3 train.py --data_dir /ccl-data/splits/ --num_epochs 2 --batch_size 256
-      - name: Test model
+      - name: test model
         run: |
           export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
           cd $GITHUB_WORKSPACE/content-classification/scripts/
           python3 test.py --data_dir /ccl-data/splits/
-      - name: next-release-tag
+      - name: tar artifacts
+        run: |
+
+      - name: bump version
         run: echo "NEXT_RELEASE_TAG=$(.github/scripts/next-version.sh)" >> $GITHUB_ENV
       - name: release
         if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
