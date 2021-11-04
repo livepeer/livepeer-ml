@@ -4,6 +4,6 @@ if [ -z "$cur_tag" ]
 then
       cur_tag="0.1"
 else
-      cur_tag=$(python -c "t=str($cur_tag);print('.'.join(t.split('.')[:-1])+'.'+str(int(t.split('.')[-1])+1))")
+      cur_tag=$(python3 -c "t=str($cur_tag);print('.'.join(t.split('.')[:-1])+'.'+str(int(t.split('.')[-1])+1))")
 fi
 echo $cur_tag
