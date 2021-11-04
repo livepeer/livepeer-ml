@@ -12,5 +12,5 @@ jobs:
     runs-on: ml-gpu-runner
     steps:
     - uses: actions/checkout@v2
-    - name: Commit and push changes
+    - name: Train and test the model
       uses: ./.github/actions/content-classification-train@v1
