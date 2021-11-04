@@ -64,14 +64,14 @@ def train(input_shape, data_dir, logs_dir, batch, epochs, weights, classes, out_
     model = content_classification.build_model(input_shape, weights, len(classes))
 
     logger.info('Training...')
-    fit_result = model.fit(x=train_iter,
-                           epochs=epochs,
-                           validation_data=val_iter)
+    # fit_result = model.fit(x=train_iter,
+    #                        epochs=epochs,
+    #                        validation_data=val_iter)
 
-    df = pd.DataFrame.from_dict(fit_result.history)
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None)
-    logger.info(f'\n{df}')
+    # df = pd.DataFrame.from_dict(fit_result.history)
+    # pd.set_option('display.max_columns', None)
+    # pd.set_option('display.max_rows', None)
+    # logger.info(f'\n{df}')
 
     logger.info('Evaluating...')
 

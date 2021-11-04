@@ -21,27 +21,27 @@ jobs:
           export_default_credentials: true
 #      - name: install global dependencies
 #        run: python3 -m pip install -r requirements.txt
-#      - name: install model dependencies
-#        run: if [ -f content-classification/requirements.txt ]; then python3 -m pip install -r content-classification/requirements.txt; fi
-#      - name: sync the dataset
-#        run: gsutil -m rsync -i -d -r gs://livepeer-ml-data /ccl-data/data
-#      - name: Create data splits
-#        run: |
-#          cd utils
-#          python3 split.py --data_dir /ccl-data/data/ --splits_out_dir /ccl-data/splits/ --out_dir /ccl-data/splits/ --resize_to 224,224
-#      - name: train model
-#        run: |
-#          export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
-#          cd $GITHUB_WORKSPACE/content-classification/scripts/
-#          python3 train.py --data_dir /ccl-data/splits/ --num_epochs 2 --batch_size 256
-#      - name: test model
-#        run: |
-#          export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
-#          cd $GITHUB_WORKSPACE/content-classification/scripts/
-#          python3 test.py --data_dir /ccl-data/splits/
-#      - name: fetch metrics
-#        run: |
-#          echo "TEST_METRICS=Test $(grep 'Results:' content-classification/models/current/test.log)" >> $GITHUB_ENV
+      - name: install model dependencies
+        run: if [ -f content-classification/requirements.txt ]; then python3 -m pip install -r content-classification/requirements.txt; fi
+      - name: sync the dataset
+        run: gsutil -m rsync -i -d -r gs://livepeer-ml-data /ccl-data/data
+      - name: Create data splits
+        run: |
+          cd utils
+          python3 split.py --data_dir /ccl-data/data/ --splits_out_dir /ccl-data/splits/ --out_dir /ccl-data/splits/ --resize_to 224,224
+      - name: train model
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
+          cd $GITHUB_WORKSPACE/content-classification/scripts/
+          python3 train.py --data_dir /ccl-data/splits/ --num_epochs 2 --batch_size 256
+      - name: test model
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
+          cd $GITHUB_WORKSPACE/content-classification/scripts/
+          python3 test.py --data_dir /ccl-data/splits/
+      - name: fetch metrics
+        run: |
+          echo "TEST_METRICS=Test $(grep 'Results:' content-classification/models/current/test.log)" >> $GITHUB_ENV
       - name: add pr comment
         if: ${{ github.event_name == 'pull_request'}}
         uses: actions/github-script@v3
@@ -57,7 +57,7 @@ jobs:
       - name: tar artifacts
         if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         run: |
-          cd $GITHUB_WORKSPACE/content-classification/
+          cd $GITHUB_WORKSPACE/content-classification/models/current
           tar -czvf models.tar.gz .
       - name: bump version
         if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
