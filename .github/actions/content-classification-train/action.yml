@@ -2,15 +2,19 @@ inputs:
   name:
     description: 'Action name'
     default: 'Train and test the model'
+  gcp_service_key:
+    description: 'GCP key'
+    default: ''
 runs:
   steps:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@master
       with:
         project_id: livepeer-ml
-        service_account_key: ${{ secrets.GCP_SERVICE_KEY }}
+        service_account_key: ${{ inputs.gcp_service_key }}
         export_default_credentials: true
     - name: Install global dependencies
+      shell: bash
       run: python3 -m pip install -r requirements.txt
 #    - name: Install model dependencies
 #      run: if [ -f content-classification/requirements.txt ]; then python3 -m pip install -r content-classification/requirements.txt; fi
