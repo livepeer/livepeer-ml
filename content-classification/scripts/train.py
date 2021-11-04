@@ -137,7 +137,7 @@ if __name__ == '__main__':
     fh.setFormatter(logging.Formatter('[%(asctime)s.%(msecs)03d]: %(process)d %(module)s %(levelname)s %(message)s'))
     logger.addHandler(fh)
     # tf.compat.v1.disable_eager_execution()
-    # train
+    #  train
     train((args.input_shape, args.input_shape, 3), args.data_dir, logs_dir, args.batch_size, args.num_epochs, args.weights,
           classes,
           args.out_dir,
