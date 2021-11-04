@@ -1,6 +1,6 @@
 # This workflow will train and test detection model on self-hosted runner. It assumes system or local Python is configured on the host.
 
-name: Train detection model
+name: Train, test and release detection model
 
 on:
 #  push:
@@ -19,14 +19,17 @@ jobs:
           project_id: livepeer-ml
           service_account_key: ${{ secrets.GCP_SERVICE_KEY }}
           export_default_credentials: true
-      - name: Install global dependencies
-        run: python3 -m pip install -r requirements.txt
+#      - name: Install global dependencies
+#        run: python3 -m pip install -r requirements.txt
+      - name: next-release-tag
+        run: echo "NEXT_RELEASE_TAG=$(.github/scripts/next-version.sh)" >> $GITHUB_ENV
       - name: release
         if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         uses: ncipollo/release-action@v1
         with:
           artifacts: "content-classification/models/current/tasmodel.pb"
           bodyFile: "content-classification/models/current/test.log"
+          tag: ${{ env.NEXT_RELEASE_TAG }}
           token: ${{ secrets.GITHUB_TOKEN }}
 #      - name: Install model dependencies
 #        run: if [ -f content-classification/requirements.txt ]; then python3 -m pip install -r content-classification/requirements.txt; fi
