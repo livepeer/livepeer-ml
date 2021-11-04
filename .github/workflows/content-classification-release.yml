@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 jobs:
   create-model:
-    uses: workflows/content-classification-validate.yml
+    uses: .github/workflows/content-classification.yml@v1
   release:
     runs-on: ml-gpu-runner
     steps:
