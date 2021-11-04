@@ -1,7 +1,5 @@
 # This workflow will train and test detection model on self-hosted runner. It assumes system or local Python is configured on the host.
-
 name: Create content classification model
-
 on:
   workflow_call:
 #  push:

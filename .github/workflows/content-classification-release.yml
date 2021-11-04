@@ -1,7 +1,5 @@
-# This workflow will train and test detection model on self-hosted runner. It assumes system or local Python is configured on the host.
-
+# This workflow will train the model and create a release
 name: Release content classification model
-
 on:
   push:
     branches: [ master ]
