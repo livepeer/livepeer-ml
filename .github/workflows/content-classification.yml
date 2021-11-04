@@ -52,7 +52,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: ${TEST_METRICS}
+              body: "${TEST_METRICS}"
             })
       - name: tar artifacts
         if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}

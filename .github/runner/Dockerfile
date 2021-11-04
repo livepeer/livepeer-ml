@@ -1,7 +1,7 @@
 FROM nvidia/cuda:11.4.2-cudnn8-runtime-ubuntu18.04
 
 # set the github runner version
-ARG RUNNER_VERSION="2.283.3"
+ARG RUNNER_VERSION="2.284.0"
 
 # update package list and create user
 RUN apt-get update -y && useradd -m devops
@@ -43,7 +43,7 @@ curl -sX POST -H "Authorization: token ${ACCESS_TOKEN}" https://api.github.com/r
 echo "configure runner" \n\
 ./config.sh --url https://github.com/${ORGANIZATION}/${REPOSITORY} --token $(cat .reg-token) --name ml-gpu-runner --labels ml-gpu-runner --unattended \n\
 echo "start runner" \n\
-./run.sh & wait $! \n\
+./bin/runsvc.sh & wait $! \n\
 '>create_and_run.sh
 
 RUN chmod +x create_and_run.sh
