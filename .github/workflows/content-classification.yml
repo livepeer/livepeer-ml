@@ -43,7 +43,7 @@ jobs:
 #        run: |
 #          echo "TEST_METRICS=Test $(grep 'Results:' content-classification/models/current/test.log)" >> $GITHUB_ENV
       - name: add pr comment
-        if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'}}
+        if: ${{ github.event_name == 'pull_request'}}
         uses: actions/github-script@v3
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
