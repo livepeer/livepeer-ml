@@ -22,9 +22,7 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger()
 
 
-def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_fraction):
-    logs_dir = os.path.join(out_dir, 'logs', 'train')
-    os.makedirs(logs_dir, exist_ok=True)
+def train(input_shape, data_dir, logs_dir, batch, epochs, weights, classes, out_dir, val_fraction):
     np.random.seed(1337)
 
     # create generator, dataset is large enough to skip affine transformations, but color shifts required to prevent
@@ -71,11 +69,13 @@ def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_f
                            validation_data=val_iter)
 
     df = pd.DataFrame.from_dict(fit_result.history)
-    logger.info(df)
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)
+    logger.info(f'\n{df}')
 
     logger.info('Evaluating...')
 
-    test(input_shape, os.path.join(data_dir, 'train'), None, model, logs_dir)
+    test(input_shape, classes, os.path.join(data_dir, 'train'), None, model, logs_dir)
 
     logger.info('Saving...')
     # save keras model for evaluation
@@ -132,12 +132,14 @@ if __name__ == '__main__':
     # load classes
     classes = pd.read_csv(os.path.join(args.data_dir, 'classes.txt'), header=None)[0].to_list()
     # configure logging
-    fh = logging.FileHandler(os.path.join(args.out_dir, 'train.log'), mode='w')
+    logs_dir = os.path.join(args.out_dir, 'logs', 'train')
+    os.makedirs(logs_dir, exist_ok=True)
+    fh = logging.FileHandler(os.path.join(logs_dir, 'train.log'), mode='w')
     fh.setFormatter(logging.Formatter('[%(asctime)s.%(msecs)03d]: %(process)d %(module)s %(levelname)s %(message)s'))
     logger.addHandler(fh)
     # tf.compat.v1.disable_eager_execution()
     # train
-    train((args.input_shape, args.input_shape, 3), args.data_dir, args.batch_size, args.num_epochs, args.weights,
+    train((args.input_shape, args.input_shape, 3), args.data_dir, logs_dir, args.batch_size, args.num_epochs, args.weights,
           classes,
           args.out_dir,
           args.val_fraction)

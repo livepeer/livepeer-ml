@@ -26,7 +26,7 @@ def as_labels(x, classes):
     return list(classes[idx] for idx in np.argmax(x, axis=1))
 
 
-def test(input_shape, dataset_dir, model_dir, model, out_dir):
+def test(input_shape, classes, dataset_dir, model_dir, model, out_dir):
     np.random.seed(1337)
     random.seed(1337)
     batch_size = 32
@@ -102,8 +102,7 @@ if __name__ == '__main__':
         logger.error('data_dir does not exist or has incorrect structure. See --help.')
         exit(-1)
     if not os.path.exists(args.out_dir):
-        logger.error('Output dir does not exist')
-        exit(-1)
+        os.makedirs(args.out_dir)
     # load classes
     classes = pd.read_csv(os.path.join(args.data_dir, 'classes.txt'), header=None)[0].to_list()
     # configure file logging
@@ -112,6 +111,6 @@ if __name__ == '__main__':
     logger.addHandler(fh)
     logger.info('Start test')
     # run
-    test_loss, test_accuracy = test((args.input_shape, args.input_shape, 3), os.path.join(args.data_dir, 'test'), args.model_dir,
+    test_loss, test_accuracy = test((args.input_shape, args.input_shape, 3), classes, os.path.join(args.data_dir, 'test'), args.model_dir,
                                     None, args.out_dir)
     exit(int(test_accuracy < 0.85))
