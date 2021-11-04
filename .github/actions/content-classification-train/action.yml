@@ -14,7 +14,7 @@ runs:
         service_account_key: ${{ inputs.gcp_service_key }}
         export_default_credentials: true
     - name: Install global dependencies
-      shell: bash
+      shell: sh
       run: python3 -m pip install -r requirements.txt
 #    - name: Install model dependencies
 #      run: if [ -f content-classification/requirements.txt ]; then python3 -m pip install -r content-classification/requirements.txt; fi
