@@ -15,4 +15,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Commit and push changes
-    - uses: actions/content-classification-train@v1
+      uses: actions/content-classification-train@v1
