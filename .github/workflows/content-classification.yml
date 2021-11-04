@@ -24,10 +24,10 @@ jobs:
       - name: release
         if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         uses: ncipollo/release-action@v1
-          with:
-            artifacts: "content-classification/models/current/tasmodel.pb"
-            bodyFile: "content-classification/models/current/test.log"
-            token: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          artifacts: "content-classification/models/current/tasmodel.pb"
+          bodyFile: "content-classification/models/current/test.log"
+          token: ${{ secrets.GITHUB_TOKEN }}
 #      - name: Install model dependencies
 #        run: if [ -f content-classification/requirements.txt ]; then python3 -m pip install -r content-classification/requirements.txt; fi
 #      - name: Sync the dataset
