@@ -45,15 +45,15 @@ jobs:
       - name: add pr comment
         if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'}}
         uses: actions/github-script@v3
-          with:
-            github-token: ${{secrets.GITHUB_TOKEN}}
-            script: |
-              github.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: ${TEST_METRICS}
-              })
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: ${TEST_METRICS}
+            })
       - name: tar artifacts
         if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         run: |
