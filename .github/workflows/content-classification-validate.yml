@@ -1,5 +1,5 @@
 # This workflow will train and test detection model on self-hosted runner. It assumes system or local Python is configured on the host.
-name: Create content classification model
+name: Create and validate content classification model
 on:
   workflow_call:
 #  push:
@@ -13,4 +13,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Commit and push changes
-      uses: actions/content-classification-train@v1
+      uses: ./.github/actions/content-classification-train@v1
