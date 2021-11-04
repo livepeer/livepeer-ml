@@ -1,0 +1,14 @@
+# This workflow will train and test detection model on self-hosted runner. It assumes system or local Python is configured on the host.
+
+name: Release content classification model
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+jobs:
+  create-model:
+    uses: workflows/content-classification-validate.yml
+  release:
+    runs-on: ml-gpu-runner
+    steps:
