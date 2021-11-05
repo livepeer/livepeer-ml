@@ -1,35 +1,73 @@
 # This workflow will train and test detection model on self-hosted runner. It assumes system or local Python is configured on the host.
 
-name: Create detection model
+name: Train and release content classification model
 
 on:
-#  push:
-#    branches: [ master ]
+  push:
+    branches: [ master ]
   pull_request:
     branches: [ master ]
   workflow_dispatch:
 jobs:
-  build:
+  train-test-release:
     runs-on: ml-gpu-runner
     steps:
-    - uses: actions/checkout@v2
-    - name: Install global dependencies
-      run: pip install -r requirements.txt
-    - name: Install model dependencies
-      run: if [ -f content-classification/requirements.txt ]; then pip install -r content-classification/requirements.txt; fi
-    - name: Sync the dataset
-      run: gsutil -m rsync -i -d -r gs://livepeer-ml-data $CCL_DATASET
-    - name: Create data splits
-      run: |
-       cd utils
-       python split.py --data_dir $CCL_DATASET --splits_out_dir $CCL_DATASET/../splits/ --out_dir $CCL_DATASET/../splits/ --resize_to 224,224
-    - name: Train model
-      run: |
-       export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
-       cd $GITHUB_WORKSPACE/content-classification/scripts/
-       python train.py --data_dir $CCL_DATASET/../splits/ --num_epochs 2 --batch_size 256
-    - name: Test model
-      run: |
-       export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
-       cd $GITHUB_WORKSPACE/content-classification/scripts/
-       python test.py --data_dir $CCL_DATASET/../splits/ --num_epochs 2 --batch_size 256
+      - uses: actions/checkout@v2
+      - name: Set up GCloud SDK
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: livepeer-ml
+          service_account_key: ${{ secrets.GCP_SERVICE_KEY }}
+          export_default_credentials: true
+      - name: Install global dependencies
+        run: python3 -m pip install -r requirements.txt
+      - name: Install model dependencies
+        run: if [ -f content-classification/requirements.txt ]; then python3 -m pip install -r content-classification/requirements.txt; fi
+      - name: Sync the dataset
+        run: gsutil -m rsync -i -d -r gs://livepeer-ml-data /ccl-data/data
+      - name: Create data splits
+        run: |
+          cd utils
+          python3 split.py --data_dir /ccl-data/data/ --splits_out_dir /ccl-data/splits/ --out_dir /ccl-data/splits/ --resize_to 224,224
+      - name: Train model
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
+          cd $GITHUB_WORKSPACE/content-classification/scripts/
+          python3 train.py --data_dir /ccl-data/splits/
+      - name: Test model
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
+          cd $GITHUB_WORKSPACE/content-classification/scripts/
+          python3 test.py --data_dir /ccl-data/splits/
+      - name: Fetch metrics
+        run: |
+          echo "TEST_METRICS=Test $(grep 'Results:' content-classification/models/current/logs/test/test.log)" >> $GITHUB_ENV
+      - name: Add PR comment
+        if: ${{ github.event_name == 'pull_request'}}
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '${{env.TEST_METRICS}}'
+            })
+      - name: Tar artifacts
+        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          cd $GITHUB_WORKSPACE/content-classification/models/
+          tar -czvf models.tar.gz current/
+      - name: Bump version
+        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+        run: echo "NEXT_RELEASE_TAG=$(.github/scripts/next-version.sh)" >> $GITHUB_ENV
+      - name: Release
+        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "content-classification/models/current/tasmodel.pb,content-classification/models/models.tar.gz"
+          bodyFile: "content-classification/models/current/logs/test/test.log"
+          tag: ${{ env.NEXT_RELEASE_TAG }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+

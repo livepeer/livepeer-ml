@@ -9,10 +9,9 @@ import numpy as np
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
 import logging
 import content_classification
-
-from tensorflow.keras.applications import mobilenet_v2
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
+from test import test
 from utils.aug_data_generator import AugmentedDataGenerator
 
 logging.basicConfig(level=logging.INFO,
@@ -23,9 +22,7 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger()
 
 
-def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_fraction):
-    logs_dir = os.path.join(out_dir, 'logs')
-    os.makedirs(logs_dir, exist_ok=True)
+def train(input_shape, data_dir, logs_dir, batch, epochs, weights, classes, out_dir, val_fraction):
     np.random.seed(1337)
 
     # create generator, dataset is large enough to skip affine transformations, but color shifts required to prevent
@@ -66,20 +63,25 @@ def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_f
     logger.info('Creating model...')
     model = content_classification.build_model(input_shape, weights, len(classes))
 
-    # training process callbacks
-    logging = TensorBoard(log_dir=logs_dir)
-    checkpoint = ModelCheckpoint(os.path.join(logs_dir, 'model.h5'),
-                                 monitor='val_loss', save_weights_only=True, save_best_only=True, save_freq='epoch')
-
-    earlystop = EarlyStopping(monitor='val_categorical_accuracy', patience=20, verbose=0, mode='auto')
-
     logger.info('Training...')
     fit_result = model.fit(x=train_iter,
                            epochs=epochs,
                            validation_data=val_iter,
-                           callbacks=[logging, checkpoint, earlystop])
-    logger.info('Saving...')
+                           verbose=2)
 
+    df = pd.DataFrame.from_dict(fit_result.history)
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)
+    logger.info(f'\n{df}')
+
+    # logger.info('Evaluating...')
+    # test(input_shape, classes, os.path.join(data_dir, 'train'), None, model, logs_dir)
+
+    logger.info('Saving...')
+    # save keras model for evaluation
+    model.save(os.path.join(args.out_dir, 'keras'))
+
+    logger.info('Freezing graph...')
     # save the model as frozen graph for compatibility, input name will be input_1, and output name is Identity
 
     # convert Keras model to ConcreteFunction
@@ -97,11 +99,6 @@ def train(input_shape, data_dir, batch, epochs, weights, classes, out_dir, val_f
                       name="tasmodel.pb",
                       as_text=False)
 
-    # save keras model for evaluation
-    model.save(os.path.join(args.out_dir, 'keras'))
-
-    df = pd.DataFrame.from_dict(fit_result.history)
-    df.to_csv(os.path.join(out_dir, 'train_stats.csv'), encoding='utf-8', index=False)
     logger.info('Done.')
 
 
@@ -112,8 +109,8 @@ if __name__ == '__main__':
                                                       'subdir per class with samples'
                                                       '2. classes.txt file with one line per class label \n')
     ap.add_argument("--input_shape", default=224, help="Model input shape", type=int)
-    ap.add_argument("--batch_size", default=32, help="Batch size", type=int)
-    ap.add_argument("--num_epochs", default=300, help="Number of epochs", type=int)
+    ap.add_argument("--batch_size", default=256, help="Batch size", type=int)
+    ap.add_argument("--num_epochs", default=2, help="Number of epochs", type=int)
     ap.add_argument("--weights", default='', help="Start weights")
     ap.add_argument("--out_dir", default='../models/current/', help="Train log dir")
     ap.add_argument("--val_fraction", default=0.1, help="How much data to use as validation subset during training")
@@ -130,17 +127,18 @@ if __name__ == '__main__':
         logger.error('Weights file does not exist')
         exit(-1)
     if not os.path.exists(args.out_dir):
-        logger.error('Output dir does not exist')
-        exit(-1)
+        os.makedirs(args.out_dir)
     # load classes
     classes = pd.read_csv(os.path.join(args.data_dir, 'classes.txt'), header=None)[0].to_list()
     # configure logging
-    fh = logging.FileHandler(os.path.join(args.out_dir, 'train.log'), mode='w')
+    logs_dir = os.path.join(args.out_dir, 'logs', 'train')
+    os.makedirs(logs_dir, exist_ok=True)
+    fh = logging.FileHandler(os.path.join(logs_dir, 'train.log'), mode='w')
     fh.setFormatter(logging.Formatter('[%(asctime)s.%(msecs)03d]: %(process)d %(module)s %(levelname)s %(message)s'))
     logger.addHandler(fh)
     # tf.compat.v1.disable_eager_execution()
-    # train
-    train((args.input_shape, args.input_shape, 3), args.data_dir, args.batch_size, args.num_epochs, args.weights,
+    #  train
+    train((args.input_shape, args.input_shape, 3), args.data_dir, logs_dir, args.batch_size, args.num_epochs, args.weights,
           classes,
           args.out_dir,
           args.val_fraction)
