@@ -24,7 +24,10 @@ jobs:
       - name: Install model dependencies
         run: if [ -f content-classification/requirements.txt ]; then python3 -m pip install -r content-classification/requirements.txt; fi
       - name: Sync the dataset
-        run: gsutil -m rsync -i -d -r gs://livepeer-ml-data /ccl-data/data
+        run: |
+          cd /ccl-data/
+          mkdir data || true
+          gsutil -m rsync -i -d -r gs://livepeer-ml-data /ccl-data/data
       - name: Create data splits
         run: |
           cd utils
