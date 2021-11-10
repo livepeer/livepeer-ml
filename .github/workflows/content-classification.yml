@@ -62,11 +62,14 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/content-classification/models/
           tar -czvf models.tar.gz current/
+      - name: Extract branch name
+        run: echo "CUR_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+        id: extract_branch
       - name: Bump version
-        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && env.CUR_BRANCH == 'master') }}
         run: echo "NEXT_RELEASE_TAG=$(.github/scripts/next-version.sh)" >> $GITHUB_ENV
       - name: Release
-        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && env.CUR_BRANCH == 'master') }}
         uses: ncipollo/release-action@v1
         with:
           artifacts: "content-classification/models/current/tasmodel.pb,content-classification/models/models.tar.gz"
