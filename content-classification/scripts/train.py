@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger()
 
 
-def train(input_shape, data_dir, logs_dir, batch, epochs, weights, classes, out_dir, val_fraction):
+def train(input_shape, data_dir, logs_dir, batch, epochs, weights, classes, out_dir, val_fraction, verbose=False):
     np.random.seed(1337)
 
     # create generator, dataset is large enough to skip affine transformations, but color shifts required to prevent
@@ -67,7 +67,7 @@ def train(input_shape, data_dir, logs_dir, batch, epochs, weights, classes, out_
     fit_result = model.fit(x=train_iter,
                            epochs=epochs,
                            validation_data=val_iter,
-                           verbose=2)
+                           verbose=1 if verbose else 2)
 
     df = pd.DataFrame.from_dict(fit_result.history)
     pd.set_option('display.max_columns', None)
@@ -114,6 +114,7 @@ if __name__ == '__main__':
     ap.add_argument("--weights", default='', help="Start weights")
     ap.add_argument("--out_dir", default='../models/current/', help="Train log dir")
     ap.add_argument("--val_fraction", default=0.1, help="How much data to use as validation subset during training")
+    ap.add_argument("--verbose", default=False, action='store_true', help="More verbose output when fitting the model")
     args = ap.parse_args()
     # check args
     classes_file = os.path.exists(os.path.join(args.data_dir, 'classes.txt'))
@@ -141,4 +142,5 @@ if __name__ == '__main__':
     train((args.input_shape, args.input_shape, 3), args.data_dir, logs_dir, args.batch_size, args.num_epochs, args.weights,
           classes,
           args.out_dir,
-          args.val_fraction)
+          args.val_fraction,
+          args.verbose)
