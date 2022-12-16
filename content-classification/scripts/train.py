@@ -79,7 +79,7 @@ def train(input_shape, data_dir, logs_dir, batch, epochs, weights, classes, out_
 
     logger.info('Saving...')
     # save keras model for evaluation
-    model.save(os.path.join(args.out_dir, 'keras'))
+    model.save(os.path.join(args.out_dir, 'keras'), include_optimizer=False)
 
     logger.info('Freezing graph...')
     # save the model as frozen graph for compatibility, input name will be input_1, and output name is Identity
